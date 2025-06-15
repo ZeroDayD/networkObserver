@@ -1,8 +1,9 @@
 import logging
 import os
+from constants import DEBUG_LOG
 
 # Set up global logger
-log_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "../logs/debug.log")
+log_path = DEBUG_LOG
 os.makedirs(os.path.dirname(log_path), exist_ok=True)
 
 logging.basicConfig(

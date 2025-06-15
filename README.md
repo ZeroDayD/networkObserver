@@ -1,4 +1,4 @@
-# networkObserver
+# Network Observer
 
 A lightweight automated tool for wireless network reconnaissance and WPS-based attacks using [Wifite2](https://github.com/kimocoder/wifite2) on headless devices like Raspberry Pi Zero.
 
