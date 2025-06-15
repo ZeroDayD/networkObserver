@@ -8,8 +8,7 @@ ATTACK_TIMEOUT = 360
 WIFITE_ARGS = [
     "wifite",
     "--wps-only",
-    "--ignore-locks",
-    "--output-dir", "./data"
+    "--ignore-locks"
 ]
 
 
