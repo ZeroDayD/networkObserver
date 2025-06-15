@@ -2,6 +2,8 @@ import subprocess
 import time
 import re
 import logging
+import os
+from constants import BASE_DIR
 from utils import strip_ansi
 
 ATTACK_TIMEOUT = 360
@@ -32,6 +34,10 @@ def extract_pin(line):
 
 def attack_target(interface, essid):
     logging.info(f"Starting attack on {essid}...")
+
+    os.makedirs(BASE_DIR / "data", exist_ok=True)
+    os.chdir(BASE_DIR / "data")
+
     proc = subprocess.Popen(
         WIFITE_ARGS + ["-i", interface, "-e", essid],
         stdout=subprocess.PIPE,

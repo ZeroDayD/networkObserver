@@ -18,7 +18,7 @@ WPS_TIMEOUT = config.get("wps_timeout_sec", 300)
 
 # Hard-coded constants
 TARGETS_FILE = BASE_DIR / "data" / "targets.json"
-CRACKED_FILE = BASE_DIR / "core" / "cracked.json"
 DEBUG_LOG = BASE_DIR / "logs" / "debug.log"
-PCAP_FILE = BASE_DIR / "logs" / "reaver_output.pcap"
+CRACKED_FILE = BASE_DIR / "data" / "cracked.json"
+PCAP_FILE = BASE_DIR / "data" / "reaver_output.pcap"
 OUI_FILE = BASE_DIR / "data" / "oui_map.txt"
