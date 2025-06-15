@@ -1,0 +1,5 @@
+TARGETS_FILE = "../data/targets.json"
+CRACKED_FILE = "../core/cracked.json"
+ATTACK_INTERFACE = "wlan1"
+REAVER_OUTPUT = "../logs/reaver_output.pcap"
+DEBUG_LOG = "../logs/debug.log"
