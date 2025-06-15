@@ -3,7 +3,8 @@ import time
 import re
 import logging
 import os
-from constants import BASE_DIR
+import json
+from constants import BASE_DIR, CRACKED_FILE
 from utils import strip_ansi
 
 ATTACK_TIMEOUT = 360
@@ -73,6 +74,20 @@ def attack_target(interface, essid):
             break
 
     proc.terminate()
+
+    # Fallback: try to recover PSK from cracked.json
+    if pin and not psk and CRACKED_FILE.exists():
+        try:
+            with open(CRACKED_FILE) as f:
+                cracked_data = json.load(f)
+            for entry in cracked_data:
+                if entry.get("essid") == essid and entry.get("pin") == pin:
+                    recovered_psk = entry.get("psk")
+                    if recovered_psk:
+                        psk = recovered_psk
+                        logging.info(f"Recovered PSK from cracked.json for {essid}: {psk}")
+        except Exception as e:
+            logging.warning(f"Failed to parse cracked.json: {e}")
 
     if psk:
         return {"psk": psk, "pin": pin}
