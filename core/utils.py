@@ -2,6 +2,20 @@ import os
 import subprocess
 import re
 import logging
+from constants import DEBUG_LOG
+
+
+def setup_logging():
+    os.makedirs(os.path.dirname(DEBUG_LOG), exist_ok=True)
+    logging.basicConfig(
+        level=logging.DEBUG,
+        format="%(asctime)s [%(levelname)s] %(message)s",
+        handlers=[
+            logging.FileHandler(DEBUG_LOG, mode="a"),
+            logging.StreamHandler()
+        ]
+    )
+
 
 def run_cmd(cmd):
     logging.debug(f"Running command: {' '.join(cmd)}")
@@ -15,6 +29,7 @@ def run_cmd(cmd):
         logging.error(f"Exception while running command {' '.join(cmd)}: {e}")
         return ""
 
+
 def clean_files(*files):
     for f in files:
         try:
@@ -24,5 +39,22 @@ def clean_files(*files):
         except Exception as e:
             logging.warning(f"Failed to remove {f}: {e}")
 
+
 def strip_ansi(text):
     return re.sub(r'\x1b\[[0-9;]*m', '', text)
+
+
+def is_ssh_connected():
+    try:
+        output = subprocess.check_output(["ps", "-eo", "pid,ppid,user,args"]).decode()
+        return "sshd:" in output or "pts/" in output
+    except Exception as e:
+        logging.warning(f"Failed to check SSH connection: {e}")
+        return False
+
+
+def shutdown_device():
+    try:
+        subprocess.call(["sudo", "shutdown", "now"])
+    except Exception as e:
+        logging.error(f"Shutdown failed: {e}")

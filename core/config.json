@@ -1,6 +1,0 @@
-{
-  "telegram_token": "YOUR_TOKEN",
-  "chat_id": "YOUR_CHAT_ID",
-  "stop_on_success": true,
-  "shutdown_on_complete": true
-}
