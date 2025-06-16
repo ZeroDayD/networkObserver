@@ -54,13 +54,13 @@ To automatically run `networkObserver` on boot via `systemd`, you can create a s
 
 ```ini
 [Unit]
-Description=Auto-start networkObserver script on boot
+Description=Auto-start Network Observer script on boot
 After=network-online.target
 Wants=network-online.target
 
 [Service]
 Type=simple
-WorkingDirectory=/home/pi/networkObserver/core  # Change to your actual path
+WorkingDirectory=/home/pi/networkObserver/core
 Environment=PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 Environment=TERM=xterm
 Environment=COLUMNS=80
@@ -68,9 +68,11 @@ Environment=LINES=24
 ExecStartPre=/sbin/ip link set wlan1 down
 ExecStartPre=/sbin/iw wlan1 set type monitor
 ExecStartPre=/sbin/ip link set wlan1 up
+
 ExecStart=/usr/bin/python3 /home/pi/networkObserver/core/main.py
-StandardOutput=append:/home/pi/networkObserver/core/debug.log
-StandardError=append:/home/pi/networkObserver/core/debug.log
+
+StandardOutput=append:/home/pi/networkObserver/logs/debug.log
+StandardError=append:/home/pi/networkObserver/logs/debug.log
 Restart=always
 RestartSec=60
 
