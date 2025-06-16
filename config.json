@@ -5,5 +5,6 @@
   "shutdown_on_complete": true,
   "attack_interface": "wlan1",
   "min_signal_dbm": -70,
-  "wps_timeout_sec": 300
+  "wps_timeout_sec": 300,
+  "attack_timeout_sec": 360
 }

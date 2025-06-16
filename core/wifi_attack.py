@@ -4,7 +4,8 @@ import re
 import logging
 import os
 import json
-from constants import BASE_DIR, CRACKED_FILE
+import threading
+from constants import BASE_DIR, CRACKED_FILE, ATTACK_TIMEOUT
 from utils import strip_ansi
 
 ATTACK_TIMEOUT = 360
@@ -33,6 +34,15 @@ def extract_pin(line):
     return None
 
 
+def kill_proc_later(proc, timeout):
+    def _kill():
+        time.sleep(timeout)
+        if proc.poll() is None:
+            logging.warning(f"Attack timeout ({timeout}s) reached — killing process.")
+            proc.terminate()
+    threading.Thread(target=_kill, daemon=True).start()
+
+
 def attack_target(interface, essid):
     logging.info(f"Starting attack on {essid}...")
 
@@ -46,9 +56,10 @@ def attack_target(interface, essid):
         text=True
     )
 
+    kill_proc_later(proc, ATTACK_TIMEOUT)
+
     psk = None
     pin = None
-    start_time = time.time()
 
     for line in proc.stdout:
         line = strip_ansi(line.strip())
@@ -67,11 +78,6 @@ def attack_target(interface, essid):
             if maybe_pin:
                 pin = maybe_pin
                 logging.info(f"WPS PIN found for {essid}: {pin}")
-
-        if time.time() - start_time > ATTACK_TIMEOUT:
-            logging.warning(f"Attack timeout ({ATTACK_TIMEOUT}s) reached for {essid}, terminating.")
-            proc.terminate()
-            break
 
     proc.terminate()
 
