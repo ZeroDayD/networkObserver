@@ -1,27 +1,16 @@
-import os
-import json
-import requests
 import logging
+import requests
+from constants import TELEGRAM_TOKEN, TELEGRAM_CHAT_ID
+
 
 def send_message(message):
-    config_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "config.json")
-
-    try:
-        with open(config_path) as f:
-            config = json.load(f)
-    except Exception as e:
-        logging.error(f"Failed to load config.json: {e}")
-        return
-
-    token = config.get("telegram_token")
-    chat_id = config.get("chat_id")
-    if not token or not chat_id:
+    if not TELEGRAM_TOKEN or not TELEGRAM_CHAT_ID:
         logging.error("Missing 'telegram_token' or 'chat_id' in config.json")
         return
 
-    url = f"https://api.telegram.org/bot{token}/sendMessage"
+    url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
     payload = {
-        "chat_id": chat_id,
+        "chat_id": TELEGRAM_CHAT_ID,
         "text": message
     }
 

