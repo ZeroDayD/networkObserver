@@ -3,30 +3,30 @@ import time
 import json
 import re
 import logging
-from utils import run_cmd, strip_ansi
+from utils import strip_ansi
 from constants import TARGETS_FILE
 
-MAX_SCAN_TIME = 75
-POWER_COLUMN_INDEX = 4
-
+MAX_SCAN_TIME = 75  # seconds
 
 def parse_wifite_line(line):
     line = strip_ansi(line.strip())
-    if not line:
+    if not line or not re.match(r"^\s*\d+\s+", line):
         return None
 
     logging.debug(f"[wifite] {line}")
-    essid_match = re.search(r'\d+\s+(.+?)\s+\d+\s+WPA', line)
-    if not essid_match:
+
+    regex = re.compile(
+        r"^\s*\d+\s+(?P<essid>.+?)\s+(?P<ch>\d+)\s+(?P<enc>\S+)\s+(?P<pwr>\d+)db"
+    )
+    match = regex.match(line)
+    if not match:
         return None
 
-    essid = essid_match.group(1).replace("*", "").strip()
-
+    essid = match.group("essid").strip()
     try:
-        columns = line.split()
-        power = int(columns[POWER_COLUMN_INDEX].replace('db', ''))
+        power = int(match.group("pwr"))
         return essid, power
-    except Exception as e:
+    except ValueError as e:
         logging.debug(f"Failed to extract power for {essid}: {e}")
         return None
 
