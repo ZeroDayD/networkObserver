@@ -2,19 +2,34 @@ import os
 import subprocess
 import re
 import logging
-from constants import DEBUG_LOG
-
+from datetime import datetime
+from pathlib import Path
 
 def setup_logging():
-    os.makedirs(os.path.dirname(DEBUG_LOG), exist_ok=True)
+    logs_dir = Path(__file__).resolve().parent.parent / "logs"
+    logs_dir.mkdir(exist_ok=True)
+
+    # Create log filename with timestamp
+    timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    log_file = logs_dir / f"debug_{timestamp}.log"
+
+    # Configure logger
     logging.basicConfig(
         level=logging.DEBUG,
         format="%(asctime)s [%(levelname)s] %(message)s",
         handlers=[
-            logging.FileHandler(DEBUG_LOG, mode="a"),
+            logging.FileHandler(log_file),
             logging.StreamHandler()
         ]
     )
+
+    # Remove old logs (keep only the last 5)
+    log_files = sorted(logs_dir.glob("debug_*.log"), key=os.path.getmtime, reverse=True)
+    for old_file in log_files[5:]:
+        try:
+            old_file.unlink()
+        except Exception as e:
+            logging.warning(f"Could not delete old log file {old_file}: {e}")
 
 
 def run_cmd(cmd):

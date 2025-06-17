@@ -10,8 +10,7 @@ from constants import (
     PCAP_FILE,
     STOP_ON_SUCCESS,
     MAX_RUNTIME,
-    ENABLE_NMAP_SCAN,
-    DEBUG_LOG
+    ENABLE_NMAP_SCAN
 )
 from wifi_scan import scan_targets
 from wifi_attack import attack_target
@@ -33,14 +32,13 @@ def has_internet():
     except subprocess.CalledProcessError:
         return False
 
-# Clean temp files
-clean_files(TARGETS_FILE, CRACKED_FILE, PCAP_FILE, DEBUG_LOG)
-
 # Ensure logs directory exists + configure logging
 setup_logging()
-
-logging.info("Temporary files cleaned.")
 logging.info("Starting networkObserver")
+
+# Clean temp files
+clean_files(TARGETS_FILE, CRACKED_FILE, PCAP_FILE)
+logging.info("Temporary files cleaned.")
 
 
 # Scan for targets

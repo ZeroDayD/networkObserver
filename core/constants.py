@@ -21,7 +21,6 @@ ENABLE_NMAP_SCAN = config.get("enable_nmap_scan", False)
 
 # Hard-coded constants
 TARGETS_FILE = BASE_DIR / "data" / "targets.json"
-DEBUG_LOG = BASE_DIR / "logs" / "debug.log"
 CRACKED_FILE = BASE_DIR / "data" / "cracked.json"
 PCAP_FILE = BASE_DIR / "data" / "reaver_output.pcap"
 OUI_FILE = BASE_DIR / "data" / "oui_map.txt"
