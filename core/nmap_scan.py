@@ -1,0 +1,26 @@
+import subprocess
+import logging
+
+
+def run_nmap_scan(interface_ip):
+    try:
+        logging.info(f"Running nmap scan on local network ({interface_ip}/24)...")
+        result = subprocess.run(
+            ["nmap", "-sV", "-T4", "-oN", "-", f"{interface_ip}/24"],
+            capture_output=True, text=True, timeout=180
+        )
+        return result.stdout.strip()
+    except Exception as e:
+        logging.error(f"Failed to run nmap scan: {e}")
+        return None
+
+def get_wifi_ip(interface):
+    try:
+        ip_output = subprocess.check_output(["ip", "-4", "addr", "show", interface], text=True)
+        for line in ip_output.splitlines():
+            line = line.strip()
+            if line.startswith("inet "):
+                return line.split()[1].split("/")[0]
+    except Exception as e:
+        logging.warning(f"Failed to get IP address of {interface}: {e}")
+    return None

