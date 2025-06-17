@@ -43,15 +43,8 @@ def clean_files(*files):
 def strip_ansi(text):
     return re.sub(r'\x1b\[[0-9;]*m', '', text)
 
-
 def is_ssh_connected():
-    try:
-        output = subprocess.check_output(["ps", "-eo", "pid,ppid,user,args"]).decode()
-        return "sshd:" in output or "pts/" in output
-    except Exception as e:
-        logging.warning(f"Failed to check SSH connection: {e}")
-        return False
-
+    return bool(os.getenv("SSH_CONNECTION") or os.getenv("SSH_TTY"))
 
 def shutdown_device():
     try:
