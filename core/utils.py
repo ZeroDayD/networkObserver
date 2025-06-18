@@ -59,7 +59,11 @@ def strip_ansi(text):
     return re.sub(r'\x1b\[[0-9;]*m', '', text)
 
 def is_ssh_connected():
-    return bool(os.getenv("SSH_CONNECTION") or os.getenv("SSH_TTY"))
+    try:
+        output = subprocess.check_output(["who"]).decode()
+        return any("pts/" in line and "(" in line for line in output.splitlines())
+    except Exception:
+        return False
 
 def shutdown_device():
     try:
