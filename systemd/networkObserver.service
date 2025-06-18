@@ -17,11 +17,7 @@ ExecStartPre=/sbin/ip link set wlan1 up
 
 ExecStart=/usr/bin/python3 /home/pi/networkObserver/core/main.py
 
-StandardOutput=append:/home/pi/networkObserver/logs/debug.log
-StandardError=append:/home/pi/networkObserver/logs/debug.log
-
-Restart=always
-RestartSec=60
+Restart=no
 
 [Install]
 WantedBy=multi-user.target

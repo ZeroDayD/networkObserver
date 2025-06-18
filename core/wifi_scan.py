@@ -42,26 +42,39 @@ def save_targets_to_file(targets):
 
 def scan_targets(interface):
     logging.info("Scanning for targets using wifite...")
-    proc = subprocess.Popen(
-        ["script", "-q", "-c", f"wifite --wps-only --ignore-locks -i {interface}", "/dev/null"],
-        stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True
-    )
 
-    targets = {}
-    start_time = time.time()
+    try:
+        proc = subprocess.Popen(
+            ["script", "-q", "-c", f"wifite --wps-only --ignore-locks -i {interface}", "/dev/null"],
+            stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+            text=True, bufsize=1
+        )
 
-    for line in iter(proc.stdout.readline, ""):
-        if time.time() - start_time > MAX_SCAN_TIME:
-            logging.warning(f"Scan timeout reached ({MAX_SCAN_TIME}s), terminating wifite.")
-            proc.terminate()
-            break
+        targets = {}
+        start_time = time.time()
 
-        parsed = parse_wifite_line(line)
-        if parsed:
-            essid, power = parsed
-            if essid not in targets or targets[essid] < power:
-                targets[essid] = power
+        for line in iter(proc.stdout.readline, ""):
+            if time.time() - start_time > MAX_SCAN_TIME:
+                logging.warning(f"Scan timeout reached ({MAX_SCAN_TIME}s), terminating wifite.")
+                proc.terminate()
+                try:
+                    proc.wait(timeout=5)
+                except subprocess.TimeoutExpired:
+                    logging.error("Wifite did not terminate in time. Killing...")
+                    proc.kill()
+                    proc.wait()
+                break
 
-    sorted_targets = sorted(targets.items(), key=lambda x: -x[1])
-    save_targets_to_file(sorted_targets)
-    return sorted_targets
+            parsed = parse_wifite_line(line)
+            if parsed:
+                essid, power = parsed
+                if essid not in targets or targets[essid] < power:
+                    targets[essid] = power
+
+        sorted_targets = sorted(targets.items(), key=lambda x: -x[1])
+        save_targets_to_file(sorted_targets)
+        return sorted_targets
+
+    except Exception as e:
+        logging.error(f"Failed to scan with wifite: {e}")
+        return []
