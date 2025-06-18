@@ -89,7 +89,8 @@ def wait_for_time_sync(timeout=30):
         try:
             current_year = int(time.strftime("%Y"))
             if current_year >= 2024:
-                logging.info("System time appears to be synced.")
+                now = time.strftime("%Y-%m-%d %H:%M:%S")
+                logging.info(f"System time appears to be synced: {now}")
                 return
         except Exception:
             pass
