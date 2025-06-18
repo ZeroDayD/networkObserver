@@ -14,7 +14,7 @@ from constants import (
 )
 from wifi_scan import scan_targets
 from wifi_attack import attack_target
-from wifi_connect import connect_to_wifi
+from wifi_connect import connect_to_wifi, delete_all_wifi_connections
 from send_to_telegram import send_message
 from nmap_scan import run_nmap_scan, get_wifi_ip, clean_nmap_output
 
@@ -35,6 +35,9 @@ def has_internet():
 # Ensure logs directory exists + configure logging
 setup_logging()
 logging.info("Starting networkObserver")
+
+# Delete all previous WiFi connections
+delete_all_wifi_connections()
 
 # Clean temp files
 clean_files(TARGETS_FILE, CRACKED_FILE, PCAP_FILE)
