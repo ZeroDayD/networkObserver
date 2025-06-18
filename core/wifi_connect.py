@@ -1,60 +1,62 @@
 import time
 import logging
-import subprocess
 from utils import run_cmd
 from constants import ATTACK_INTERFACE
 
 
 def connect_to_wifi(essid, pin=None, psk=None):
-    logging.info("Preparing interface...")
+    logging.info("Preparing Wi-Fi interface...")
     run_cmd(["sudo", "ip", "link", "set", ATTACK_INTERFACE, "down"])
     run_cmd(["sudo", "iw", ATTACK_INTERFACE, "set", "type", "managed"])
     run_cmd(["sudo", "ip", "link", "set", ATTACK_INTERFACE, "up"])
-    logging.debug("Interface set to managed mode and brought up.")
+    logging.debug("Interface is now in managed mode.")
 
-    logging.info(f"Waiting for {essid} to appear in scan...")
+    logging.info("Triggering initial Wi-Fi rescan...")
+    run_cmd(["nmcli", "device", "wifi", "rescan"])
+
+    logging.info(f"Looking for SSID: {essid}")
     for attempt in range(15):
         scan_output = run_cmd([
-            "nmcli", "-t", "-f", "SSID", "dev", "wifi", "list",
+            "nmcli", "-t", "-f", "SSID", "device", "wifi", "list",
             "ifname", ATTACK_INTERFACE
         ])
-        logging.debug(f"Scan output (attempt {attempt + 1}): {scan_output}")
+        logging.debug(f"Scan result (attempt {attempt + 1}): {scan_output}")
         if essid in scan_output:
-            logging.info(f"{essid} found in scan.")
+            logging.info(f"SSID {essid} found.")
             break
         time.sleep(5)
     else:
-        logging.warning(f"{essid} not visible after scan attempts.")
+        logging.warning(f"SSID {essid} was not found after multiple scans.")
         return False
 
-    logging.info("Cleaning up old connections...")
+    logging.info("Deleting old Wi-Fi connections with same SSID...")
     run_cmd(["nmcli", "connection", "delete", essid])
-    run_cmd(["bash", "-c", f"nmcli connection delete id \"{essid}\" || true"])
-    run_cmd(["bash", "-c", f"nmcli connection delete id '{essid}' || true"])
+    run_cmd(["nmcli", "connection", "delete", f'"{essid}"'])
+    run_cmd(["nmcli", "connection", "delete", f"'{essid}'"])
 
     password = pin or psk
     method = "PIN" if pin else "PSK"
-    logging.info(f"Connecting to {essid} with {method}...")
+    logging.info(f"Attempting to connect using {method}...")
 
     result = run_cmd([
-        "nmcli", "dev", "wifi", "connect", essid,
+        "nmcli", "device", "wifi", "connect", essid,
         "password", password,
         "ifname", ATTACK_INTERFACE
     ])
-    logging.debug(f"nmcli output: {result}")
+    logging.debug(f"nmcli connection result: {result}")
 
     if "Error:" in result or "failed" in result.lower():
-        logging.error(f"nmcli reported connection error: {result}")
+        logging.error(f"Connection failed: {result}")
         return False
 
     time.sleep(5)
     ip_output = run_cmd(["ip", "addr", "show", ATTACK_INTERFACE])
-    logging.debug(f"IP output: {ip_output}")
+    logging.debug(f"IP info: {ip_output}")
     if "inet " in ip_output:
-        logging.info(f"Successfully connected to {essid}, IP assigned.")
+        logging.info(f"Connected to {essid} successfully with IP.")
         return True
     else:
-        logging.warning(f"Connected to {essid} but no IP assigned.")
+        logging.warning("Connection established, but no IP was assigned.")
         return False
 
 
