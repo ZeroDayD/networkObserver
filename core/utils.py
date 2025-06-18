@@ -3,18 +3,28 @@ import subprocess
 import re
 import logging
 import time
-from datetime import datetime
-from pathlib import Path
+from constants import (MAX_LOG_FILES, LOG_DIR)
 
 def setup_logging():
-    logs_dir = Path(__file__).resolve().parent.parent / "logs"
-    logs_dir.mkdir(exist_ok=True)
+    if not os.path.exists(LOG_DIR):
+        os.makedirs(LOG_DIR)
 
-    # Create log filename with timestamp
-    timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    log_file = logs_dir / f"debug_{timestamp}.log"
+    monotonic_time = int(time.monotonic())
+    log_file = os.path.join(LOG_DIR, f"debug_uptime_{monotonic_time}.log")
 
-    # Configure logger
+    # remove old logs if exceeding limit
+    log_files = sorted(
+        [f for f in os.listdir(LOG_DIR) if f.startswith("debug_uptime_")],
+        key=lambda f: os.path.getmtime(os.path.join(LOG_DIR, f))
+    )
+    while len(log_files) >= MAX_LOG_FILES:
+        oldest = log_files.pop(0)
+        try:
+            os.remove(os.path.join(LOG_DIR, oldest))
+        except Exception as e:
+            print(f"Failed to delete old log {oldest}: {e}")
+
+    # configure logging
     logging.basicConfig(
         level=logging.DEBUG,
         format="%(asctime)s [%(levelname)s] %(message)s",
@@ -23,14 +33,6 @@ def setup_logging():
             logging.StreamHandler()
         ]
     )
-
-    # Remove old logs (keep only the last 5)
-    log_files = sorted(logs_dir.glob("debug_*.log"), key=os.path.getmtime, reverse=True)
-    for old_file in log_files[5:]:
-        try:
-            old_file.unlink()
-        except Exception as e:
-            logging.warning(f"Could not delete old log file {old_file}: {e}")
 
 
 def run_cmd(cmd):

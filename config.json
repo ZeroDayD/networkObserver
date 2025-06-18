@@ -8,5 +8,6 @@
   "wps_timeout_sec": 300,
   "attack_timeout_sec": 360,
   "max_runtime_sec": 1800,
-  "enable_nmap_scan": true
+  "enable_nmap_scan": true,
+  "max_log_files": 5
 }

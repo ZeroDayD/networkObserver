@@ -32,7 +32,7 @@ wait_for_time_sync()
 logging.info("Time was synchronized with NTP.")
 
 # Set global timer after time sync
-global_start_time = time.time()
+global_start_time = time.monotonic()
 
 # Clean up Wi-Fi state
 delete_all_wifi_connections()
@@ -47,7 +47,7 @@ targets = scan_targets(ATTACK_INTERFACE)
 
 # Attack loop
 while targets:
-    if time.time() - global_start_time > MAX_RUNTIME:
+    if time.monotonic() - global_start_time > MAX_RUNTIME:
         logging.warning("Max runtime exceeded. Exiting.")
         break
 

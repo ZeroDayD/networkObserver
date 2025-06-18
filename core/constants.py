@@ -17,10 +17,12 @@ MIN_SIGNAL_DBM = config.get("min_signal_dbm", -70)
 WPS_TIMEOUT = config.get("wps_timeout_sec", 300)
 ATTACK_TIMEOUT = config.get("attack_timeout_sec", 360)
 MAX_RUNTIME = config.get("max_runtime_sec", 1800)
-ENABLE_NMAP_SCAN = config.get("enable_nmap_scan", False)
+ENABLE_NMAP_SCAN = config.get("enable_nmap_scan", False),
+MAX_LOG_FILES = config.get("max_log_files", 5)
 
 # Hard-coded constants
 TARGETS_FILE = BASE_DIR / "data" / "targets.json"
 CRACKED_FILE = BASE_DIR / "data" / "cracked.json"
 PCAP_FILE = BASE_DIR / "data" / "reaver_output.pcap"
 OUI_FILE = BASE_DIR / "data" / "oui_map.txt"
+LOG_DIR = BASE_DIR / "logs"
