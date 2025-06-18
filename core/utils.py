@@ -2,6 +2,7 @@ import os
 import subprocess
 import re
 import logging
+import time
 from datetime import datetime
 from pathlib import Path
 
@@ -81,3 +82,16 @@ def has_internet():
         return True
     except subprocess.CalledProcessError:
         return False
+
+def wait_for_time_sync(timeout=30):
+    logging.info("Waiting for NTP time sync...")
+    for _ in range(timeout):
+        try:
+            current_year = int(time.strftime("%Y"))
+            if current_year >= 2024:
+                logging.info("System time appears to be synced.")
+                return
+        except Exception:
+            pass
+        time.sleep(1)
+    logging.warning("System time may not be synced after waiting.")

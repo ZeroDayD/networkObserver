@@ -1,7 +1,7 @@
 import os
 import time
 import logging
-from utils import clean_files, setup_logging, is_ssh_connected, has_internet
+from utils import clean_files, setup_logging, is_ssh_connected, has_internet, wait_for_time_sync
 from constants import (
     TARGETS_FILE,
     CRACKED_FILE,
@@ -22,6 +22,10 @@ global_start_time = time.time()
 # Ensure logs directory exists + configure logging
 setup_logging()
 logging.info("Starting networkObserver")
+
+# Synchronize time with NTP
+wait_for_time_sync()
+logging.info("Time was synchronized with NTP.")
 
 # Clean up any lingering Wi-Fi connections before scan
 delete_all_wifi_connections()
