@@ -66,11 +66,16 @@ def delete_all_wifi_connections():
             text=True,
             check=True
         )
-
+        deleted_any = False
         for line in result.stdout.strip().split("\n"):
             if ":wifi" in line:
                 conn_name = line.split(":")[0]
                 subprocess.run(["nmcli", "connection", "delete", "id", conn_name], check=False)
-                logging.debug(f"Deleted Wi-Fi connection: {conn_name}")
+                logging.info(f"Deleted Wi-Fi connection: {conn_name}")
+                deleted_any = True
+
+        if not deleted_any:
+            logging.info("No Wi-Fi connections to delete.")
+
     except Exception as e:
         logging.warning(f"Failed to clean Wi-Fi connections: {e}")
