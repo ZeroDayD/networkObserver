@@ -1,8 +1,7 @@
 import os
 import time
 import logging
-import subprocess
-from utils import clean_files, setup_logging, is_ssh_connected
+from utils import clean_files, setup_logging, is_ssh_connected, has_internet
 from constants import (
     TARGETS_FILE,
     CRACKED_FILE,
@@ -20,24 +19,13 @@ from nmap_scan import run_nmap_scan, get_wifi_ip, clean_nmap_output
 
 global_start_time = time.time()
 
-
-def has_internet():
-    try:
-        subprocess.check_call(
-            ["ping", "-c", "1", "-W", "2", "8.8.8.8"],
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL
-        )
-        return True
-    except subprocess.CalledProcessError:
-        return False
-
 # Ensure logs directory exists + configure logging
 setup_logging()
 logging.info("Starting networkObserver")
 
-# Delete all previous WiFi connections
+# Clean up any lingering Wi-Fi connections before scan
 delete_all_wifi_connections()
+logging.info("Disconnected all previous Wi-Fi connections.")
 
 # Clean temp files
 clean_files(TARGETS_FILE, CRACKED_FILE, PCAP_FILE)

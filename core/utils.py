@@ -70,3 +70,14 @@ def shutdown_device():
         subprocess.call(["sudo", "shutdown", "now"])
     except Exception as e:
         logging.error(f"Shutdown failed: {e}")
+
+def has_internet():
+    try:
+        subprocess.check_call(
+            ["ping", "-c", "1", "-W", "2", "8.8.8.8"],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL
+        )
+        return True
+    except subprocess.CalledProcessError:
+        return False
