@@ -16,7 +16,7 @@ from wifi_scan import scan_targets
 from wifi_attack import attack_target
 from wifi_connect import connect_to_wifi
 from send_to_telegram import send_message
-from nmap_scan import run_nmap_scan, get_wifi_ip
+from nmap_scan import run_nmap_scan, get_wifi_ip, clean_nmap_output
 
 global_start_time = time.time()
 
@@ -70,7 +70,8 @@ while targets:
                         logging.info(f"Running nmap scan on internal network: {ip}")
                         nmap_result = run_nmap_scan(ip)
                         if nmap_result:
-                            send_message(f"[nmap scan result]\n```{nmap_result[:4000]}```")
+                            cleaned_output = clean_nmap_output(nmap_result)
+                            send_message(f"[nmap scan result]\n```{cleaned_output[:4000]}```")
                     else:
                         logging.warning("No IP assigned to wlan0. Skipping nmap scan.")
             else:

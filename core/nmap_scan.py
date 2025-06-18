@@ -24,3 +24,23 @@ def get_wifi_ip(interface):
     except Exception as e:
         logging.warning(f"Failed to get IP address of {interface}: {e}")
     return None
+
+def clean_nmap_output(raw_output):
+    lines = raw_output.splitlines()
+    cleaned_lines = []
+    inside_fingerprint = False
+
+    for line in lines:
+        if line.startswith("SF-Port"):
+            inside_fingerprint = True
+            continue
+        if inside_fingerprint:
+            if line.endswith('");'):
+                inside_fingerprint = False
+            continue
+        if line.strip().startswith("# Nmap scan initiated") or line.strip().startswith("# Nmap done"):
+            continue
+
+        cleaned_lines.append(line)
+
+    return "\n".join(cleaned_lines).strip()
