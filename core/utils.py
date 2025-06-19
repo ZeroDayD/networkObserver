@@ -9,16 +9,27 @@ def setup_logging():
     if not os.path.exists(LOG_DIR):
         os.makedirs(LOG_DIR)
 
-    monotonic_time = int(time.monotonic())
-    log_file = os.path.join(LOG_DIR, f"debug_uptime_{monotonic_time}.log")
+    # find the last log file index
+    existing_logs = [
+        f for f in os.listdir(LOG_DIR)
+        if f.startswith("log_") and f.endswith(".log")
+    ]
+    if existing_logs:
+        existing_logs.sort()
+        last_log = existing_logs[-1]
+        try:
+            last_index = int(last_log.split("_")[2].split(".")[0])
+        except (IndexError, ValueError):
+            last_index = -1
+    else:
+        last_index = -1
 
-    # remove old logs if exceeding limit
-    log_files = sorted(
-        [f for f in os.listdir(LOG_DIR) if f.startswith("debug_uptime_")],
-        key=lambda f: os.path.getmtime(os.path.join(LOG_DIR, f))
-    )
-    while len(log_files) >= MAX_LOG_FILES:
-        oldest = log_files.pop(0)
+    next_index = last_index + 1
+    log_file = os.path.join(LOG_DIR, f"log_{next_index}.log")
+
+    # remove old logs if we exceed the maximum number
+    while len(existing_logs) >= MAX_LOG_FILES:
+        oldest = existing_logs.pop(0)
         try:
             os.remove(os.path.join(LOG_DIR, oldest))
         except Exception as e:
