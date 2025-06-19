@@ -72,7 +72,7 @@ while targets:
                     nmap_result = run_nmap_scan(ip)
                     if nmap_result:
                         cleaned_output = clean_nmap_output(nmap_result)
-                        send_message(f"[nmap scan result]\n```{cleaned_output}```")
+                        send_message(cleaned_output, prefix="[nmap scan result]")
                 else:
                     logging.warning("No IP assigned to interface. Skipping nmap scan.")
 
