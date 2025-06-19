@@ -4,7 +4,6 @@ import logging
 from utils import (
     clean_files,
     setup_logging,
-    wait_for_time_sync,
     is_ssh_connected
 )
 from wifi_scan import scan_targets
@@ -26,10 +25,6 @@ from constants import (
 # Ensure logs directory exists + configure logging
 setup_logging()
 logging.info("Starting networkObserver")
-
-# Wait for NTP time synchronization
-wait_for_time_sync()
-logging.info("Time was synchronized with NTP.")
 
 # Set global timer after time sync
 global_start_time = time.monotonic()

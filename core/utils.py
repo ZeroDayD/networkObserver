@@ -2,7 +2,6 @@ import os
 import subprocess
 import re
 import logging
-import time
 from constants import (MAX_LOG_FILES, LOG_DIR)
 
 def setup_logging():
@@ -18,7 +17,7 @@ def setup_logging():
         existing_logs.sort()
         last_log = existing_logs[-1]
         try:
-            last_index = int(last_log.split("_")[2].split(".")[0])
+            last_index = int(last_log.split("_")[1].split(".")[0])
         except (IndexError, ValueError):
             last_index = -1
     else:
@@ -95,17 +94,3 @@ def has_internet():
         return True
     except subprocess.CalledProcessError:
         return False
-
-def wait_for_time_sync(timeout=30):
-    logging.info("Waiting for NTP time sync...")
-    for _ in range(timeout):
-        try:
-            current_year = int(time.strftime("%Y"))
-            if current_year >= 2024:
-                now = time.strftime("%Y-%m-%d %H:%M:%S")
-                logging.info(f"System time appears to be synced: {now}")
-                return
-        except Exception:
-            pass
-        time.sleep(1)
-    logging.warning("System time may not be synced after waiting.")
