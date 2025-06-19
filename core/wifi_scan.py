@@ -51,10 +51,10 @@ def scan_targets(interface):
         )
 
         targets = {}
-        start_time = time.time()
+        start_time = time.monotonic()
 
         for line in iter(proc.stdout.readline, ""):
-            if time.time() - start_time > MAX_SCAN_TIME:
+            if time.monotonic() - start_time > MAX_SCAN_TIME:
                 logging.warning(f"Scan timeout reached ({MAX_SCAN_TIME}s), terminating wifite.")
                 proc.terminate()
                 try:

