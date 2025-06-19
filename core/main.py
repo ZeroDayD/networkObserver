@@ -57,7 +57,7 @@ while targets:
     if result:
         connected = connect_to_wifi(essid, pin=result.get("pin"), psk=result.get("psk"))
         if connected:
-            msg = f"SSID: {essid}"
+            msg = f"[+]\nSSID: {essid}"
             if result.get("psk"):
                 msg += f"\nPassword: {result['psk']}"
             elif result.get("pin"):
