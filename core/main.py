@@ -10,7 +10,7 @@ from wifi_scan import scan_targets
 from wifi_attack import attack_target
 from wifi_connect import connect_to_wifi, delete_all_wifi_connections
 from send_to_telegram import send_message
-from nmap_scan import run_nmap_scan, get_wifi_ip, clean_nmap_output
+from nmap_scan import run_nmap_scan, get_wifi_ip, clean_nmap_output, get_llm_attack_insights
 from constants import (
     TARGETS_FILE,
     CRACKED_FILE,
@@ -66,8 +66,18 @@ while targets:
                     logging.info(f"Running nmap scan on internal network: {ip}")
                     nmap_result = run_nmap_scan(ip)
                     if nmap_result:
+                        # Send raw nmap output
                         cleaned_output = clean_nmap_output(nmap_result)
                         send_message(cleaned_output, prefix="[nmap scan result]")
+                        
+                        # Get LLM attack insights
+                        llm_insights = get_llm_attack_insights(nmap_result)
+                        if llm_insights:
+                            # Send insights with markdown formatting and chunking
+                            send_message(llm_insights, prefix="[🎯 Attack Vectors & Tools]")
+                            logging.info("LLM attack insights sent to Telegram")
+                        else:
+                            logging.info("LLM analysis not available or failed")
                 else:
                     logging.warning("No IP assigned to interface. Skipping nmap scan.")
 

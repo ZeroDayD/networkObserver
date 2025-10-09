@@ -20,6 +20,8 @@ MAX_RUNTIME = config.get("max_runtime_sec", 1800)
 ENABLE_NMAP_SCAN = config.get("enable_nmap_scan", False)
 MAX_LOG_FILES = config.get("max_log_files", 5)
 
+ENABLE_LLM_ANALYSIS = config.get("enable_llm_analysis", False)
+
 # Hard-coded constants
 TARGETS_FILE = BASE_DIR / "data" / "targets.json"
 CRACKED_FILE = BASE_DIR / "data" / "cracked.json"
