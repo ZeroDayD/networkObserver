@@ -6,8 +6,8 @@ def run_nmap_scan(interface_ip):
     try:
         logging.info(f"Running nmap scan on local network ({interface_ip}/24)...")
         result = subprocess.run(
-            ["nmap", "-sV", "-T4", "-oN", "-", f"{interface_ip}/24"],
-            capture_output=True, text=True, timeout=180
+            ["nmap", "-sV", "-O", "-T4", "-oN", "-", f"{interface_ip}/24"],
+            capture_output=True, text=True, timeout=300
         )
         return result.stdout.strip()
     except Exception as e:
