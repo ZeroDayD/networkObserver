@@ -71,7 +71,7 @@ while targets:
                         send_message(cleaned_output, prefix="[nmap scan result]")
                         
                         # Get LLM attack insights
-                        llm_insights = get_llm_attack_insights(nmap_result)
+                        llm_insights = get_llm_attack_insights(cleaned_output)
                         if llm_insights:
                             # Send insights with markdown formatting and chunking
                             send_message(llm_insights, prefix="[🎯 Attack Vectors & Tools]")

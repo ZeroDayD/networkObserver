@@ -26,7 +26,7 @@ def get_llm_attack_insights(nmap_output):
         import os
         
         # Create focused prompt for attack vectors and tools
-        prompt = f"""You are a penetration testing expert. Analyze this nmap scan and provide specific attack vectors and tool recommendations.
+        prompt = f"""You are a penetration testing expert. Analyze this nmap scan and provide specific attack vectors and tool recommendations.Short, concise, and practical.
 
 NMAP SCAN RESULTS:
 {nmap_output[:3000]}
