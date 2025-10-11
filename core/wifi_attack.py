@@ -8,7 +8,6 @@ import threading
 from constants import BASE_DIR, CRACKED_FILE, ATTACK_TIMEOUT
 from utils import strip_ansi
 
-ATTACK_TIMEOUT = 360
 WIFITE_ARGS = [
     "wifite",
     "--wps-only",

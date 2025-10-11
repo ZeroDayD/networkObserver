@@ -1,17 +1,86 @@
 import subprocess
 import logging
+import os
+from constants import ENABLE_LLM_ANALYSIS
 
 
 def run_nmap_scan(interface_ip):
     try:
         logging.info(f"Running nmap scan on local network ({interface_ip}/24)...")
         result = subprocess.run(
-            ["nmap", "-sV", "-T4", "-oN", "-", f"{interface_ip}/24"],
-            capture_output=True, text=True, timeout=180
+            ["nmap", "-sV", "-O", "-T4", "-oN", "-", f"{interface_ip}/24"],
+            capture_output=True, text=True, timeout=300
         )
         return result.stdout.strip()
     except Exception as e:
         logging.error(f"Failed to run nmap scan: {e}")
+        return None
+
+def get_llm_attack_insights(nmap_output):
+    """Get LLM insights focused on attack vectors and tools using CLI"""
+    if not ENABLE_LLM_ANALYSIS:
+        return None
+    
+    try:
+        import tempfile
+        import os
+        
+        # Create focused prompt for attack vectors and tools
+        prompt = f"""You are a penetration testing expert. Analyze this nmap scan and provide specific attack vectors and tool recommendations.Short, concise, and practical.
+
+NMAP SCAN RESULTS:
+{nmap_output[:3000]}
+
+Please provide a focused analysis in markdown format with:
+
+## 🎯 Attack Vectors
+- List specific attack methods for discovered services
+- Prioritize by likelihood of success
+
+## 🛠️ Recommended Tools
+- Specific tools/commands for each attack vector
+- Include exact tool names and basic usage
+
+## ⚡ Quick Wins
+- Immediate vulnerabilities to exploit
+- Low-hanging fruit
+
+## 🔍 Further Investigation
+- Additional scanning recommendations
+- Services requiring deeper analysis
+
+Keep responses practical and actionable for immediate use."""
+
+        # Write prompt to temporary file
+        with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.txt') as temp_file:
+            temp_file.write(prompt)
+            temp_file_path = temp_file.name
+        
+        try:
+            # Call LLM CLI with your syntax
+            result = subprocess.run(
+                ["llm", "-m", "gemini/gemini-2.0-flash"],
+                input=prompt,
+                capture_output=True,
+                text=True,
+                timeout=60
+            )
+            
+            if result.returncode == 0:
+                return result.stdout.strip()
+            else:
+                logging.error(f"LLM CLI failed: {result.stderr}")
+                return None
+                
+        finally:
+            # Clean up temp file
+            os.unlink(temp_file_path)
+        
+    except FileNotFoundError:
+        logging.error("LLM CLI not found. Install with: pip install llm")
+        return None
+    except Exception as e:
+        logging.error(f"LLM analysis failed: {e}")
         return None
 
 def get_wifi_ip(interface):
